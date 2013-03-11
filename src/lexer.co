@@ -500,12 +500,21 @@ exports import
     value
 
   # a location object for a given value
-  # TODO obviously not correct
+  # TODO make more efficient
   loc: ->
+    lines = 0
+    last-column = 0
+    if typeof it is \string
+      # XXX duplicate of @advance logic
+      it.split /\n/
+        lines = &length - 1
+        last-column = if &length > 1 then &[*-1]length else @column + it.length
     first_line   : -~@line
     first_column : @column
-    last_line    : -~@line
-    last_column  : @column + if typeof it is \string then it.length else 0
+    # if it wasn't a string (e.g. IDENT), location is 0-length
+    # (last-column is still 0)
+    last_line    : -~@line + lines
+    last_column  : last-column or @column
 
   # Records an INDENT.
   indent: !(delta) ->
