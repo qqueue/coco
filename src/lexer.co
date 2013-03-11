@@ -40,10 +40,10 @@ exports import
 
   #### Main Loop
 
-  tokenize: (code, o) ->
-    @inter or code.=replace /[\r\u2028\u2029\uFEFF]/g ''
+  tokenize: (@code, o) ->
+    @inter or @code.=replace /[\r\u2028\u2029\uFEFF]/g ''
     # Prepend a newline to handle leading INDENT.
-    code = \\n + code
+    @code = \\n + @code
     # Stream of parsed tokens,
     # initialized with a NEWLINE token to ensure `@last` always exists.
     @tokens = [@last = [\NEWLINE \\n 0]]
@@ -59,24 +59,27 @@ exports import
     @parens = []
     # The stack of flags per nesting level.
     @flags = []
-    # Call tokenizers based on the character at current `i`ndex.
+    # Call tokenizers based on the character at current `@i`ndex.
     # Each tokenizing method is responsible for
-    # returning the number of characters it has consumed.
-    i = 0
-    while c = code.charAt i
-      switch c
-      case ' '      then i += @doSpace     code, i
-      case \\n      then i += @doLine      code, i
-      case \\       then i += @doBackslash code, i
-      case \' \"    then i += @doString    code, i, c
-      case \0 to \9 then i += @doNumber    code, i
-      case \/
-        switch code.charAt i+1
-        case \* then i += @doComment code, i
-        case \/ then i += @doHeregex code, i
-        default      i += @doRegex code, i or @doLiteral code, i
-      case \` then i += @doJS code, i
-      default i += @doID code, i or @doLiteral code, i or @doSpace code, i
+    # returning the number of characters it has consumed, through @advance,
+    # which updates @i and @column.
+    # TODO since @code and @i is on `this` now, don't pass as arguments
+    @i = 0
+    while c = @code.charAt @i
+      @advance do
+        switch c
+        case ' '      then @doSpace     @code, @i
+        case \\n      then @doLine      @code, @i
+        case \\       then @doBackslash @code, @i
+        case \' \"    then @doString    @code, @i, c
+        case \0 to \9 then @doNumber    @code, @i
+        case \/
+          switch @code.charAt @i+1
+          case \* then @doComment @code, @i
+          case \/ then @doHeregex @code, @i
+          default      @doRegex @code, @i or @doLiteral @code, @i
+        case \` then @doJS @code, @i
+        default @doID @code, @i or @doLiteral @code, @i or @doSpace @code, @i
     # Close up all remaining open blocks.
     @dedent @dent
     @carp "missing `#that`" if @closes.pop!
@@ -502,7 +505,7 @@ exports import
     first_line   : -~@line
     first_column : @column
     last_line    : -~@line
-    last_column  : @column + it.length
+    last_column  : @column + if typeof it is \string then it.length else 0
 
   # Records an INDENT.
   indent: !(delta) ->
@@ -658,6 +661,21 @@ exports import
     @closes.pop!
 
   #### Helpers
+
+  # updates @i and @column based on the number of characters consumed.
+  advance: !(chars) ->
+    # the just consumed block of code
+    consumed = @code.substr @i, chars
+
+    # if they consumed newlines
+    if (lines = consumed.split /\n/)length > 1
+      # reset column to last consumed line's column
+      @column = lines[*-1]length
+    else
+      # advance column
+      @column += chars
+
+    @i += chars
 
   # Checks if the last token is
   #
