@@ -29,5 +29,5 @@ preferGlobal: true
 repository: type: \git, url: \git://github.com/satyr/coco.git
 
 devDependencies:
-  jison      : \0.2.1
+  jison      : \0.4.2
   \uglify-js : \2.2.5
