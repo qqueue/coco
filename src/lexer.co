@@ -492,9 +492,17 @@ exports import
   # Adds a token to the results,
   # taking note of the line number and returning `value`.
   token: (tag, value, callable) ->
-    @tokens.push @last = [tag, value, @line]
+    @tokens.push @last = [tag, value, @line, @loc value]
     @last.callable = true if callable
     value
+
+  # a location object for a given value
+  # TODO obviously not correct
+  loc: ->
+    first_line   : -~@line
+    first_column : @column
+    last_line    : -~@line
+    last_column  : @column + it.length
 
   # Records an INDENT.
   indent: !(delta) ->
