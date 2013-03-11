@@ -3,7 +3,10 @@
 # Reads a string of Coco code and divvies it up into tagged tokens.
 # Tokens are in the form:
 #
-#     ['TAG', 'value', lineNumber = 0]
+#     ['TAG',
+#      'value',
+#      lineNumber = 0,
+#      location{first_column, first_line, last_column, last_line}]
 #
 # which is a format that can be fed directly into
 # [Jison](http://github.com/zaach/jison) generated [parser](../lib/parser.js).
@@ -46,6 +49,8 @@ exports import
     @tokens = [@last = [\NEWLINE \\n 0]]
     # The current line number. Starts from -1 to setoff the prepended newline.
     @line = ~-o.line
+    # The current column number, indexed from 0.
+    @column = 0
     # The stack of all current indentation levels.
     @dents = []
     # The stack for pairing tokens.
